@@ -1,0 +1,129 @@
+library(reshape)
+library(dplyr)
+library(lubridate)
+library(stats)
+library(tseries)
+library(rugarch)
+library(fpp)
+library(forecast)
+library(car)
+library(nortest)
+require(graphics)
+library(mFilter)
+library(ggplot2)
+library(tidyverse)
+library(cowplot)
+library(randomForest)
+library(readxl)
+library(mice)
+library(shiny)
+library(shinydashboard)
+library(prophet)
+
+
+Local = "C:/Users/eduar/Documents/GitHub/time-series"
+setwd(Local)
+
+Toxinas = read.csv("Datasets/Alltoxins.csv",encoding = "UTF-8" )
+
+Toxinasmc = Toxinas[Toxinas$type == "mc",] 
+
+Toxinascyn = Toxinas[Toxinas$type == "cyn",] 
+
+Toxinasstx = Toxinas[Toxinas$type == "stx",] 
+
+colnames(Toxinasmc) = c("ds","y","tipo")
+
+colnames(Toxinascyn) = c("ds","y","tipo")
+
+colnames(Toxinasstx) = c("ds","y","tipo")
+
+modelomc = prophet(Toxinasmc, changepoint.prior.scale = 0.06, interval.width = 0.8)
+
+modelocyn = prophet(Toxinasmc)
+
+modelostx = prophet(Toxinasmc)
+
+futuromc = make_future_dataframe(modelomc, periods = 365)
+
+futurocyn = make_future_dataframe(modelocyn, periods = 365)
+
+futurostx = make_future_dataframe(modelostx, periods = 365)
+
+forecastmc = predict(modelomc,futuromc)
+
+forecastcyn = predict(modelocyn,futurocyn)
+
+forecaststx = predict(modelostx,futurostx)
+
+prophet_plot_components(modelomc,forecastmc)
+
+plot(modelomc,forecastmc) +add_changepoints_to_plot(modelomc)
+glimpse(Toxinas)
+
+
+#imputando dados
+
+md.pattern(Toxinas)
+
+imp = mice(Toxinas,method = "cart")
+
+completo = complete(imp,1)
+
+
+
+#graficos
+
+
+ggplot(Toxinas,aes(x = as.Date(Date), y = Tox, group = type))+
+  geom_line(aes(colour = type), size = 1)+
+  geom_point(shape = 16 , size =1. )+
+  theme_cowplot()+
+  theme(axis.text.x = element_text(angle = 0),
+        legend.title=element_blank(),
+        legend.position = "top",
+        #legend.position = c(.05,.95),
+        legend.direction = "horizontal")+
+  ylab(expression(paste(mu,g,L)^-1))+
+  xlab("")
+
+
+
+ggplot(completo,aes(x = as.Date(Date), y = Tox, group = type))+
+  geom_line(aes(colour = type), size = 1)+
+  geom_point(shape = 16 , size =1. )+
+  theme_cowplot()+
+  theme(axis.text.x = element_text(angle = 0),
+        legend.title=element_blank(),
+        legend.position = "top",
+        #legend.position = c(.05,.95),
+        legend.direction = "horizontal")+
+  ylab(expression(paste(mu,g,L)^-1))+
+  xlab("")
+
+
+
+
+
+
+
+
+start_Date = min(as.Date(Toxinas$Date))
+end_Date = max(as.Date(Toxinas$Date))
+
+
+a = ggplot(Toxinas, aes(x = as.Date(Date),y = Tox, group = type)) +
+  geom_line(aes(color = type), size = 1) +
+  scale_x_date(limits = c(start_Date, end_Date))+
+  geom_hline(yintercept =1, linetype = 2)+
+  theme_cowplot()+
+  theme(legend.title=element_text(family="Times",size=20),
+        legend.text=element_text(family="Times",face = "italic",size=15),
+        plot.title=element_text(family="Times", face="bold", size=20),
+        axis.title.x=element_text(family="Times", face="bold", size=12),
+        axis.title.y=element_text(family="Times", face="bold", size=12)) +
+  
+  xlab("") +
+  ylab(expression(paste(mu,g,L)^-1));a
+
+plot(a)
