@@ -145,7 +145,7 @@ server <- function(input, output, session) {
     renderPrint(
       summary(toxinas[toxinas$Date >= input$datas[1] & toxinas$Date <= input$datas[2] & toxinas$type == "stx",])
     )
-  output$plotprevisao = renderDygraph(dyplot.prophet(modelomc,forecastmc))
+  output$plotprevisao = renderDygraph(prophet_plot_components(modelomc,forecastmc))
     
     
     
